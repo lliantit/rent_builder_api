@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     PROJECT_NAME: str = "Rent Builder API"
     VERSION: str = "1.0.0"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # <-- Додали цей рядок
-
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  #
+    ALGORITHM: str = "HS256"
     model_config = SettingsConfigDict(env_file=env_file, extra="ignore")
 
 
