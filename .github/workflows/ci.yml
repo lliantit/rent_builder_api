@@ -14,27 +14,25 @@ jobs:
     - name: Завантаження коду репозиторію
       uses: actions/checkout@v4
 
-    - name: Налаштування Python 3.13
+    - name: Налаштування Python 3.11
       uses: actions/setup-python@v5
       with:
-        python-version: "3.13"
+        python-version: "3.11"
 
     - name: Встановлення залежностей
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest httpx
+        pip install bcrypt==3.2.2 passlib
         pip install -r requirements.txt
 
     - name: Перевірка коду лінтером (flake8)
       run: |
-        # Шукаємо критичні синтаксичні помилки
         flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Перевіряємо форматування (але не зупиняємо пайплайн через дрібниці)
         flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
 
     - name: Запуск тестів (pytest)
       env:
-        # Імітуємо тестове середовище для сервера GitHub
         ENVIRONMENT: sandbox
         DEBUG: True
         DATABASE_URL: sqlite:///./rent_db_sandbox.sqlite3
