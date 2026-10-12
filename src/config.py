@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     DEBUG: bool
     DATABASE_URL: str
     SECRET_KEY: str
+    PROJECT_NAME: str = "Rent Builder API"
+    VERSION: str = "1.0.0"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # <-- Додали цей рядок
 
     model_config = SettingsConfigDict(env_file=env_file, extra="ignore")
 
