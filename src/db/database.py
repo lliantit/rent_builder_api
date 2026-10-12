@@ -3,8 +3,12 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from src.core.config import settings
 
-# Створення рушія для підключення
-engine = create_engine(settings.DATABASE_URL)
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+
 
 # Налаштування сесій для взаємодії з БД
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

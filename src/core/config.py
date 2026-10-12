@@ -1,15 +1,37 @@
-from pydantic_settings import BaseSettings
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+from jose import jwt
+from passlib.context import CryptContext
+
+from src.config import settings
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Тепер секретний ключ безпечно підтягується зі змінних оточення (.env)
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-class Settings(BaseSettings):
-    PROJECT_NAME: str = "Rent Builder API"
-    VERSION: str = "0.1.0"
-
-    # Рядок підключення до PostgreSQL (локальний приклад)
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/rent_db"
-
-    class Config:
-        env_file = ".env"
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
 
-settings = Settings()
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+    to_encode.update({"exp": expire})
+
+    # Використовуємо ключ з конфігу для підпису
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
