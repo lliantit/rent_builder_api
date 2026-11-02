@@ -105,6 +105,11 @@ def get_tools(
     return tools
 
 
+@app.get("/")
+def read_root():
+    return {"message": "Hello from Docker with Hot-Reload!"}
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     if settings.DEBUG:
