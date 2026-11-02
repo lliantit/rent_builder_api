@@ -31,6 +31,8 @@ services:
       - "8000:8000"
     env_file:
       - .env.production
+    environment:
+      - DATABASE_URL=postgresql://rent_user:supersecretpassword@db:5432/rent_database
     volumes:
       - ./src:/app/src
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
