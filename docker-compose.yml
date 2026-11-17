@@ -1,5 +1,6 @@
 services:
   db:
+
     image: postgres:15-alpine
     container_name: rent_db
     restart: always
@@ -18,6 +19,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+
 
   api1: &api-base
     build:
@@ -46,6 +49,8 @@ services:
     <<: *api-base
     container_name: rent_api_3
 
+
+
   nginx:
     image: nginx:alpine
     container_name: rent_load_balancer
@@ -60,6 +65,18 @@ services:
       - api3
     networks:
       - rent_network
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: rent_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - rent_network
+
+
 
 volumes:
   postgres_data:
