@@ -1,5 +1,9 @@
 from typing import List
 
+
+import socket
+from fastapi import Request, Response
+
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -20,6 +24,24 @@ app = FastAPI(debug=settings.DEBUG)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(debug=settings.DEBUG)
+
+
+# Middleware: додає заголовок X-Server-ID до кожної відповіді сервера
+@app.middleware("http")
+async def add_server_id_header(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers["X-Server-ID"] = socket.gethostname()
+    return response
+
+# Тестовий маршрут: повертає ID екземпляра в JSON-відповіді
+@app.get("/api/server-id")
+def get_server_id():
+    return {
+        "status": "healthy",
+        "server_id": socket.gethostname()
+    }
+
+
 
 
 @app.post("/register", response_model=UserResponse)

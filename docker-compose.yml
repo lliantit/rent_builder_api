@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -21,24 +19,45 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
+  api1: &api-base
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: rent_api
+    container_name: rent_api_1
     restart: always
-    ports:
-      - "8000:8000"
     env_file:
       - .env.production
     environment:
       - DATABASE_URL=postgresql://rent_user:supersecretpassword@db:5432/rent_database
     volumes:
       - ./src:/app/src
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - rent_network
+
+  api2:
+    <<: *api-base
+    container_name: rent_api_2
+
+  api3:
+    <<: *api-base
+    container_name: rent_api_3
+
+  nginx:
+    image: nginx:alpine
+    container_name: rent_load_balancer
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
     networks:
       - rent_network
 
