@@ -6,6 +6,7 @@ import redis
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.orm import Session
 
 from src.api.deps import get_current_admin, get_current_user
@@ -21,6 +22,7 @@ from src.schemas.user import UserCreate, UserResponse
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(debug=settings.DEBUG)
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # Підключення до Redis для кешування важких вибірок
 redis_client = redis.Redis(host="redis", port=6379, db=0, decode_responses=True)
@@ -142,7 +144,7 @@ def get_tools(
     except redis.RedisError:
         pass
 
-    # 2. Якщо в кеші порожньо  робимо оптимізований запит із індексом та пагінацією
+    # 2. Якщо в кеші порожньо — робимо оптимізований запит із індексом та пагінацією
     query = db.query(Tool).filter(Tool.is_available.is_(True))
     if min_price is not None:
         query = query.filter(Tool.price_per_day >= min_price)

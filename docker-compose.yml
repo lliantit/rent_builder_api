@@ -1,71 +1,23 @@
 services:
   db:
-
     image: postgres:15-alpine
     container_name: rent_db
     restart: always
     environment:
       POSTGRES_USER: rent_user
-      POSTGRES_PASSWORD: supersecretpassword
+      POSTGRES_PASSWORD: rent_password
       POSTGRES_DB: rent_database
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - rent_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rent_user -d rent_database"]
       interval: 5s
       timeout: 5s
       retries: 5
-
-
-
-  api1: &api-base
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: rent_api_1
-    restart: always
-    env_file:
-      - .env.production
-    environment:
-      - DATABASE_URL=postgresql://rent_user:supersecretpassword@db:5432/rent_database
-    volumes:
-      - ./src:/app/src
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - rent_network
-
-  api2:
-    <<: *api-base
-    container_name: rent_api_2
-
-  api3:
-    <<: *api-base
-    container_name: rent_api_3
-
-
-
-  nginx:
-    image: nginx:alpine
-    container_name: rent_load_balancer
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api1
-      - api2
-      - api3
-    networks:
-      - rent_network
-
 
   redis:
     image: redis:7-alpine
@@ -76,7 +28,96 @@ services:
     networks:
       - rent_network
 
+  api1:
+    build: .
+    container_name: rent_api_1
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://rent_user:rent_password@db:5432/rent_database
+      SECRET_KEY: super_secret_jwt_key_2026
+      DEBUG: "True"
+      ENVIRONMENT: production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - rent_network
 
+  api2:
+    build: .
+    container_name: rent_api_2
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://rent_user:rent_password@db:5432/rent_database
+      SECRET_KEY: super_secret_jwt_key_2026
+      DEBUG: "True"
+      ENVIRONMENT: production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - rent_network
+
+  api3:
+    build: .
+    container_name: rent_api_3
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://rent_user:rent_password@db:5432/rent_database
+      SECRET_KEY: super_secret_jwt_key_2026
+      DEBUG: "True"
+      ENVIRONMENT: production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - rent_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: rent_load_balancer
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
+    networks:
+      - rent_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rent_prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - rent_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rent_grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+    networks:
+      - rent_network
 
 volumes:
   postgres_data:
